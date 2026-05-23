@@ -1,0 +1,70 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":automergeDigest",
+    "helpers:pinGitHubActionDigestsToSemver",
+    ":pinDevDependencies"
+  ],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "timezone": "UTC",
+  "schedule": ["before 4am on Monday"],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 4am on the first day of the month"]
+  },
+  "vulnerabilityAlerts": {
+    "labels": ["security", "dependencies"],
+    "schedule": ["at any time"]
+  },
+  "packageRules": [
+    {
+      "description": "Group all Python prod deps into one weekly PR.",
+      "matchManagers": ["pep621"],
+      "matchDepTypes": ["dependencies"],
+      "groupName": "python prod deps",
+      "schedule": ["before 4am on Monday"]
+    },
+    {
+      "description": "Dev tooling (ruff, pytest) gets its own PR so test-only churn doesn't ride with runtime.",
+      "matchManagers": ["pep621"],
+      "matchDepTypes": ["dev-dependencies"],
+      "groupName": "python dev tooling",
+      "schedule": ["before 4am on Monday"]
+    },
+    {
+      "description": "GitHub Actions: SHA-pin every reference and ship monthly grouped PRs.",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions",
+      "pinDigests": true,
+      "schedule": ["before 4am on the first day of the month"]
+    },
+    {
+      "description": "Docker base image (python:3.12-slim): weekly major-blocked PR. We tolerate point-release churn but never auto-major.",
+      "matchManagers": ["dockerfile"],
+      "matchPackageNames": ["python"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "docker base image",
+      "schedule": ["before 4am on Monday"]
+    },
+    {
+      "description": "Django: never auto-bump major (5.x -> 6.x); LTS coordination is manual.",
+      "matchPackageNames": ["Django", "django"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Authentik (compose dev image) stays manual; Authentik upgrades affect blueprint compat.",
+      "matchFileNames": ["deploy/compose/docker-compose.yml"],
+      "matchPackagePatterns": ["goauthentik/server"],
+      "enabled": false
+    }
+  ],
+  "rangeStrategy": "bump",
+  "internalChecksFilter": "strict",
+  "configMigration": true,
+  "rebaseWhen": "behind-base-branch"
+}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Audit log" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Audit log" %}</h1>
+
+<form method="get" class="filters">
+    <label>{% trans "Action" %}
+        <select name="action">
+            <option value="">{% trans "— any —" %}</option>
+            {% for value, label in actions %}
+                <option value="{{ value }}" {% if filters.action == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </label>
+    <label>{% trans "Target" %} <input type="text" name="target" value="{{ filters.target }}"></label>
+    <label>{% trans "Actor" %} <input type="text" name="actor" value="{{ filters.actor }}"></label>
+    <button type="submit">{% trans "Filter" %}</button>
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>{% trans "When" %}</th><th>{% trans "Action" %}</th><th>{% trans "Target" %}</th><th>{% trans "Actor" %}</th><th>{% trans "Note" %}</th><th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for row in page.object_list %}
+        <tr>
+            <td>{{ row.created_at|date:"Y-m-d H:i:s" }}</td>
+            <td><code>{{ row.action }}</code></td>
+            <td>{{ row.target }}</td>
+            <td>{{ row.actor_username|default:"—" }}</td>
+            <td>{{ row.note }}</td>
+            <td>
+                {% if row.before or row.after %}
+                    <details><summary>{% trans "diff" %}</summary>
+                        {% if row.before %}<p><strong>{% trans "before" %}</strong></p><pre>{{ row.before|pprint }}</pre>{% endif %}
+                        {% if row.after %}<p><strong>{% trans "after" %}</strong></p><pre>{{ row.after|pprint }}</pre>{% endif %}
+                    </details>
+                {% endif %}
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="6">{% trans "No events yet." %}</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% include "_paginator.html" %}
+{% endblock %}

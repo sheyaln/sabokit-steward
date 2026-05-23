@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Access denied" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Access denied" %}</h1>
+<p>{% blocktrans with group=admin_group %}Your Authentik account isn't in the <code>{{ group }}</code> group, so Steward won't let you in.{% endblocktrans %}</p>
+<p>{% blocktrans %}If you should have access, ask the sysadmin to add you. If you signed in with the wrong account, log out of Authentik and try again with the right one.{% endblocktrans %}</p>
+<p>
+    <a class="btn" href="http://localhost:9000/if/session-end/steward/">{% trans "Sign out of Authentik" %}</a>
+</p>
+{% endblock %}

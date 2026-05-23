@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load i18n steward %}
+{% block title %}Steward{% endblock %}
+{% block content %}
+<h1>{% blocktrans with name=user|display_name %}Welcome, {{ name }}{% endblocktrans %}</h1>
+<p>{% trans "Pick a section from the top nav." %}</p>
+<ul>
+    <li><a href="{% url 'members:list' %}">{% trans "Members" %}</a> — {% trans "add, edit, activate/deactivate, assign groups" %}</li>
+    <li><a href="{% url 'imports:list' %}">{% trans "Bulk imports" %}</a> — {% trans "upload CSVs of members" %}</li>
+    <li><a href="{% url 'audit:list' %}">{% trans "Audit log" %}</a> — {% trans "every change Steward has made to Authentik" %}</li>
+</ul>
+{% endblock %}

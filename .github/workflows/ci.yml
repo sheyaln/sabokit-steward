@@ -1,0 +1,238 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+
+# Restrict default token to read; jobs that need to push to GHCR opt in via
+# job-level `permissions:`.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: sheyaln/sabokit-steward
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  # -- Static checks --------------------------------------------------------
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: ruff format check
+        run: uv run ruff format --check .
+      - name: ruff lint
+        run: uv run ruff check .
+
+  # -- Django check + tests against real Postgres ---------------------------
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: steward
+          POSTGRES_USER: steward
+          POSTGRES_PASSWORD: steward
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DJANGO_SECRET_KEY: ci-not-secret-but-long-enough-to-satisfy-django-validators
+      DJANGO_DEBUG: 'false'
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: postgres://steward:steward@localhost:5432/steward
+      OIDC_RP_CLIENT_ID: ci
+      OIDC_RP_CLIENT_SECRET: ci
+      OIDC_OP_AUTHORIZATION_ENDPOINT: https://example.test/authorize/
+      OIDC_OP_TOKEN_ENDPOINT: https://example.test/token/
+      OIDC_OP_USER_ENDPOINT: https://example.test/userinfo/
+      OIDC_OP_JWKS_ENDPOINT: https://example.test/jwks/
+      AUTHENTIK_API_URL: https://example.test
+      AUTHENTIK_API_TOKEN: ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+
+      # ubuntu-latest ships gettext-base (envsubst) but not the full gettext
+      # package that provides msgfmt -- manage.py compilemessages needs it.
+      - name: Install gettext
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gettext
+
+      - name: Compile message catalogues
+        working-directory: app
+        run: uv run python manage.py compilemessages
+
+      - name: manage.py check --deploy
+        working-directory: app
+        # `--deploy` adds warnings for SSL/HSTS/cookie security. We don't fail
+        # on those at this stage -- Traefik + Ansible handle those in prod.
+        # `--fail-level ERROR` is the actual gate.
+        run: uv run python manage.py check --deploy --fail-level ERROR
+
+      - name: Apply migrations
+        working-directory: app
+        run: uv run python manage.py migrate --noinput
+
+      - name: pytest
+        working-directory: app
+        run: uv run pytest -q
+
+  # -- Image build (+ optional push) + healthz smoke + Trivy scan ----------
+  image:
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    permissions:
+      contents: read
+      packages: write       # push to GHCR
+      security-events: write # upload Trivy SARIF
+      id-token: write       # OIDC -> cosign keyless signing
+      attestations: write   # GitHub's native attestation store
+    outputs:
+      tag: ${{ steps.meta.outputs.version }}
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=pr
+            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value=master-${{ github.sha }},enable=${{ github.ref == 'refs/heads/master' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # PR build: single-platform, load locally, smoke + Trivy fs.
+      - name: Build (PR, load local)
+        if: github.event_name != 'push'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/compose/Dockerfile
+          push: false
+          load: true
+          platforms: linux/amd64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            STEWARD_VERSION=${{ steps.meta.outputs.version }}
+            STEWARD_VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ steps.meta.outputs.created || '1970-01-01T00:00:00Z' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # master / tag build: multi-platform, push to GHCR with provenance + SBOM
+      # attestations attached to the image manifest by buildkit.
+      - id: push
+        name: Build + push (master/tag, multi-arch)
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/compose/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            STEWARD_VERSION=${{ steps.meta.outputs.version }}
+            STEWARD_VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ steps.meta.outputs.created || '1970-01-01T00:00:00Z' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: mode=max
+          sbom: true
+
+      # ── Supply chain: cosign keyless signature + GitHub-native attestation
+      # Both prove "this image was built by THIS commit on THIS workflow".
+      # cosign keyless uses GitHub OIDC -> Fulcio (sigstore), no long-lived
+      # signing key. The signature lands in the same OCI registry next to
+      # the image and is verifiable with `cosign verify` (see ops runbook).
+      - name: Install cosign
+        if: github.event_name == 'push'
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image with cosign (keyless)
+        if: github.event_name == 'push'
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: cosign sign --yes "${IMAGE}@${DIGEST}"
+
+      - name: GitHub attestation (build provenance)
+        if: github.event_name == 'push'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      - name: Smoke-test built image (PR only)
+        if: github.event_name != 'push'
+        run: |
+          set -euxo pipefail
+          IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          docker run --rm -d --name steward-smoke \
+            -e DJANGO_SECRET_KEY=ci-not-secret-but-long-enough \
+            -e DJANGO_DEBUG=false \
+            -e DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1 \
+            -e DATABASE_URL=sqlite:////tmp/smoke.db \
+            -e OIDC_RP_CLIENT_ID=ci \
+            -e OIDC_RP_CLIENT_SECRET=ci \
+            -e OIDC_OP_AUTHORIZATION_ENDPOINT=https://example/ \
+            -e OIDC_OP_TOKEN_ENDPOINT=https://example/ \
+            -e OIDC_OP_USER_ENDPOINT=https://example/ \
+            -e OIDC_OP_JWKS_ENDPOINT=https://example/ \
+            -p 127.0.0.1:8000:8000 \
+            "$IMAGE_TAG"
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/healthz; then
+              echo "healthz OK"
+              docker rm -f steward-smoke
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "healthz never came up"
+          docker logs steward-smoke
+          docker rm -f steward-smoke
+          exit 1
+
+      # Local-image Trivy scan; on master/tag we just-pushed but the local
+      # cache still has the manifest, so the same scan covers both paths.
+      # Trivy image scan is intentionally absent in v0.1.0-beta -- the action's
+      # tag layout proved too unstable to lean on as a required gate. I'll
+      # re-add it as a separate, advisory job (likely calling the trivy
+      # binary directly) in a follow-up.

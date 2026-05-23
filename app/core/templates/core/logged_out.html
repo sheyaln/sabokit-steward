@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Signed out" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Signed out" %}</h1>
+<p>{% blocktrans %}You're signed out of Steward.{% endblocktrans %}</p>
+<p>
+    <a class="btn" href="{% url 'index' %}">{% trans "Sign back in" %}</a>
+</p>
+{% endblock %}

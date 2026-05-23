@@ -1,0 +1,576 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-23 11:50+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#: audit/models.py:8
+msgid "Member created"
+msgstr ""
+
+#: audit/models.py:9
+msgid "Member updated"
+msgstr ""
+
+#: audit/models.py:10
+msgid "Member activated"
+msgstr ""
+
+#: audit/models.py:11
+msgid "Member deactivated"
+msgstr ""
+
+#: audit/models.py:12
+msgid "Added to group"
+msgstr ""
+
+#: audit/models.py:13
+msgid "Removed from group"
+msgstr ""
+
+#: audit/models.py:14
+msgid "Import created"
+msgstr ""
+
+#: audit/models.py:15
+msgid "Import run"
+msgstr ""
+
+#: audit/models.py:23
+msgid "actor"
+msgstr ""
+
+#: audit/models.py:25
+msgid "actor username"
+msgstr ""
+
+#: audit/models.py:26 imports/models.py:53
+msgid "action"
+msgstr ""
+
+#: audit/models.py:27
+msgid "target"
+msgstr ""
+
+#: audit/models.py:28 audit/templates/audit/list.html:38
+msgid "before"
+msgstr ""
+
+#: audit/models.py:29 audit/templates/audit/list.html:39
+msgid "after"
+msgstr ""
+
+#: audit/models.py:30
+msgid "note"
+msgstr ""
+
+#: audit/models.py:31 imports/models.py:27
+msgid "created at"
+msgstr ""
+
+#: audit/models.py:35
+msgid "audit event"
+msgstr ""
+
+#: audit/models.py:36
+msgid "audit events"
+msgstr ""
+
+#: audit/templates/audit/list.html:3 audit/templates/audit/list.html:5
+#: core/templates/core/index.html:10 templates/base.html:45
+msgid "Audit log"
+msgstr ""
+
+#: audit/templates/audit/list.html:8 audit/templates/audit/list.html:24
+#: imports/templates/imports/detail.html:23
+msgid "Action"
+msgstr ""
+
+#: audit/templates/audit/list.html:10
+msgid "— any —"
+msgstr ""
+
+#: audit/templates/audit/list.html:16 audit/templates/audit/list.html:24
+msgid "Target"
+msgstr ""
+
+#: audit/templates/audit/list.html:17 audit/templates/audit/list.html:24
+msgid "Actor"
+msgstr ""
+
+#: audit/templates/audit/list.html:18 members/templates/members/list.html:23
+msgid "Filter"
+msgstr ""
+
+#: audit/templates/audit/list.html:24 imports/templates/imports/list.html:11
+msgid "When"
+msgstr ""
+
+#: audit/templates/audit/list.html:24
+msgid "Note"
+msgstr ""
+
+#: audit/templates/audit/list.html:37
+msgid "diff"
+msgstr ""
+
+#: audit/templates/audit/list.html:45
+msgid "No events yet."
+msgstr ""
+
+#: core/templates/core/index.html:5
+#, python-format
+msgid "Welcome, %(name)s"
+msgstr ""
+
+#: core/templates/core/index.html:6
+msgid "Pick a section from the top nav."
+msgstr ""
+
+#: core/templates/core/index.html:8 members/templates/members/list.html:3
+#: members/templates/members/list.html:6 templates/base.html:43
+msgid "Members"
+msgstr ""
+
+#: core/templates/core/index.html:8
+msgid "add, edit, activate/deactivate, assign groups"
+msgstr ""
+
+#: core/templates/core/index.html:9 imports/templates/imports/list.html:3
+#: imports/templates/imports/list.html:6
+msgid "Bulk imports"
+msgstr ""
+
+#: core/templates/core/index.html:9
+msgid "upload CSVs of members"
+msgstr ""
+
+#: core/templates/core/index.html:10
+msgid "every change Steward has made to Authentik"
+msgstr ""
+
+#: imports/forms.py:7
+msgid "CSV file"
+msgstr ""
+
+#: imports/forms.py:8
+msgid "Columns: email, name, x_number (x_number optional)."
+msgstr ""
+
+#: imports/models.py:8
+msgid "Pending"
+msgstr ""
+
+#: imports/models.py:9
+msgid "Preview ready"
+msgstr ""
+
+#: imports/models.py:10
+msgid "Running"
+msgstr ""
+
+#: imports/models.py:11
+msgid "Completed"
+msgstr ""
+
+#: imports/models.py:12
+msgid "Failed"
+msgstr ""
+
+#: imports/models.py:19
+msgid "uploaded by"
+msgstr ""
+
+#: imports/models.py:21
+msgid "original filename"
+msgstr ""
+
+#: imports/models.py:22
+msgid "CSV"
+msgstr ""
+
+#: imports/models.py:24
+msgid "status"
+msgstr ""
+
+#: imports/models.py:26
+msgid "summary"
+msgstr ""
+
+#: imports/models.py:28
+msgid "completed at"
+msgstr ""
+
+#: imports/models.py:32
+msgid "import job"
+msgstr ""
+
+#: imports/models.py:33
+msgid "import jobs"
+msgstr ""
+
+#: imports/models.py:41 members/views.py:76
+msgid "Create"
+msgstr ""
+
+#: imports/models.py:42
+msgid "Update"
+msgstr ""
+
+#: imports/models.py:43
+msgid "Skip"
+msgstr ""
+
+#: imports/models.py:44
+msgid "Error"
+msgstr ""
+
+#: imports/models.py:47
+msgid "job"
+msgstr ""
+
+#: imports/models.py:49
+msgid "row number"
+msgstr ""
+
+#: imports/models.py:50
+msgid "email"
+msgstr ""
+
+#: imports/models.py:51
+msgid "name"
+msgstr ""
+
+#: imports/models.py:52 imports/templates/imports/detail.html:23
+#: members/forms.py:11 members/templates/members/detail.html:12
+#: members/templates/members/list.html:27
+msgid "X-Number"
+msgstr ""
+
+#: imports/models.py:54
+msgid "message"
+msgstr ""
+
+#: imports/models.py:55 members/templates/members/detail.html:14
+msgid "Authentik pk"
+msgstr ""
+
+#: imports/models.py:56
+msgid "applied"
+msgstr ""
+
+#: imports/models.py:60
+msgid "import job row"
+msgstr ""
+
+#: imports/models.py:61
+msgid "import job rows"
+msgstr ""
+
+#: imports/templates/imports/detail.html:3
+#, python-format
+msgid "Import %(pk)s"
+msgstr ""
+
+#: imports/templates/imports/detail.html:5
+#, python-format
+msgid "Import #%(pk)s"
+msgstr ""
+
+#: imports/templates/imports/detail.html:8
+#: imports/templates/imports/list.html:11
+msgid "File"
+msgstr ""
+
+#: imports/templates/imports/detail.html:9
+msgid "Uploaded"
+msgstr ""
+
+#: imports/templates/imports/detail.html:9
+msgid "by"
+msgstr ""
+
+#: imports/templates/imports/detail.html:10
+#: imports/templates/imports/list.html:11
+#: members/templates/members/detail.html:13
+#: members/templates/members/list.html:27
+msgid "Status"
+msgstr ""
+
+#: imports/templates/imports/detail.html:11
+msgid "Summary"
+msgstr ""
+
+#: imports/templates/imports/detail.html:17
+msgid "Apply this import"
+msgstr ""
+
+#: imports/templates/imports/detail.html:21
+msgid "Rows"
+msgstr ""
+
+#: imports/templates/imports/detail.html:23
+#: members/templates/members/list.html:27
+msgid "Email"
+msgstr ""
+
+#: imports/templates/imports/detail.html:23
+#: members/templates/members/list.html:27
+msgid "Name"
+msgstr ""
+
+#: imports/templates/imports/detail.html:23
+msgid "Applied?"
+msgstr ""
+
+#: imports/templates/imports/detail.html:23
+msgid "Message"
+msgstr ""
+
+#: imports/templates/imports/detail.html:32
+msgid "yes"
+msgstr ""
+
+#: imports/templates/imports/detail.html:36
+msgid "No rows."
+msgstr ""
+
+#: imports/templates/imports/form.html:3 imports/templates/imports/form.html:5
+msgid "Upload CSV"
+msgstr ""
+
+#: imports/templates/imports/form.html:6
+msgid ""
+"Expected headers: email, name, optional x_number. The job is parsed and dry-"
+"run on upload; you'll confirm before any changes hit Authentik."
+msgstr ""
+
+#: imports/templates/imports/form.html:10
+msgid "Upload & preview"
+msgstr ""
+
+#: imports/templates/imports/form.html:11
+#: members/templates/members/form.html:10
+msgid "cancel"
+msgstr ""
+
+#: imports/templates/imports/list.html:7
+msgid "+ Upload CSV"
+msgstr ""
+
+#: imports/templates/imports/list.html:11
+msgid "Uploader"
+msgstr ""
+
+#: imports/templates/imports/list.html:11
+msgid "Counts"
+msgstr ""
+
+#: imports/templates/imports/list.html:20
+msgid "open"
+msgstr ""
+
+#: imports/templates/imports/list.html:23
+msgid "No imports yet."
+msgstr ""
+
+#: imports/views.py:55
+#, python-format
+msgid "Could not parse CSV: %(err)s"
+msgstr ""
+
+#: imports/views.py:58
+msgid "CSV parsed. Review below, then apply."
+msgstr ""
+
+#: imports/views.py:77
+#, python-format
+msgid "Cannot apply: job is in %(status)s state."
+msgstr ""
+
+#: imports/views.py:83
+msgid "Job enqueued. Refresh to see progress."
+msgstr ""
+
+#: members/forms.py:6
+msgid "Full name"
+msgstr ""
+
+#: members/forms.py:7
+msgid "Email (used as login)"
+msgstr ""
+
+#: members/forms.py:12
+msgid "Membership number. Optional."
+msgstr ""
+
+#: members/templates/members/detail.html:7
+msgid "Edit"
+msgstr ""
+
+#: members/templates/members/detail.html:11
+msgid "Email / username"
+msgstr ""
+
+#: members/templates/members/detail.html:13
+#: members/templates/members/list.html:20
+#: members/templates/members/list.html:34
+msgid "active"
+msgstr ""
+
+#: members/templates/members/detail.html:13
+#: members/templates/members/list.html:21
+#: members/templates/members/list.html:34
+msgid "inactive"
+msgstr ""
+
+#: members/templates/members/detail.html:19
+msgid "Deactivate"
+msgstr ""
+
+#: members/templates/members/detail.html:19
+msgid "Activate"
+msgstr ""
+
+#: members/templates/members/detail.html:22
+msgid "Groups"
+msgstr ""
+
+#: members/templates/members/detail.html:24
+msgid "Group"
+msgstr ""
+
+#: members/templates/members/detail.html:33
+msgid "remove"
+msgstr ""
+
+#: members/templates/members/detail.html:38
+msgid "No group memberships."
+msgstr ""
+
+#: members/templates/members/detail.html:46
+msgid "Add to group"
+msgstr ""
+
+#: members/templates/members/detail.html:53
+msgid "Add"
+msgstr ""
+
+#: members/templates/members/form.html:3 members/templates/members/form.html:5
+#, python-format
+msgid "%(action)s member"
+msgstr ""
+
+#: members/templates/members/list.html:7
+msgid "+ Add member"
+msgstr ""
+
+#: members/templates/members/list.html:11
+msgid "Search name, email, username"
+msgstr ""
+
+#: members/templates/members/list.html:13
+msgid "— all groups —"
+msgstr ""
+
+#: members/templates/members/list.html:19
+msgid "any state"
+msgstr ""
+
+#: members/templates/members/list.html:35
+msgid "edit"
+msgstr ""
+
+#: members/templates/members/list.html:38
+msgid "No members."
+msgstr ""
+
+#: members/templates/members/list.html:44 templates/_paginator.html:4
+msgid "« previous"
+msgstr ""
+
+#: members/templates/members/list.html:45 templates/_paginator.html:6
+#, python-format
+msgid "page %(current)s of %(total)s"
+msgstr ""
+
+#: members/templates/members/list.html:46 templates/_paginator.html:8
+msgid "next »"
+msgstr ""
+
+#: members/views.py:40
+#, python-format
+msgid "Authentik API error: %(err)s"
+msgstr ""
+
+#: members/views.py:68 members/views.py:130 members/views.py:154
+#: members/views.py:194 members/views.py:230
+#, python-format
+msgid "Authentik refused: %(err)s"
+msgstr ""
+
+#: members/views.py:71
+#, python-format
+msgid "Created %(email)s."
+msgstr ""
+
+#: members/views.py:73
+#, python-format
+msgid "Invitation pk=%(pk)s."
+msgstr ""
+
+#: members/views.py:86 members/views.py:111
+#, python-format
+msgid "Authentik error: %(err)s"
+msgstr ""
+
+#: members/views.py:133
+msgid "Updated."
+msgstr ""
+
+#: members/views.py:135
+msgid "Save"
+msgstr ""
+
+#: members/views.py:157
+msgid "Member activated."
+msgstr ""
+
+#: members/views.py:159
+msgid "Member deactivated."
+msgstr ""
+
+#: members/views.py:180 members/views.py:216
+msgid "Group not found."
+msgstr ""
+
+#: members/views.py:190
+#, python-format
+msgid "Added to %(group)s."
+msgstr ""
+
+#: members/views.py:226
+#, python-format
+msgid "Removed from %(group)s."
+msgstr ""
+
+#: templates/base.html:44
+msgid "Imports"
+msgstr ""
+
+#: templates/base.html:50
+msgid "log out"
+msgstr ""

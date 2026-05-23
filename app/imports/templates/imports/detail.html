@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% blocktrans with pk=job.pk %}Import {{ pk }}{% endblocktrans %}{% endblock %}
+{% block content %}
+<h1>{% blocktrans with pk=job.pk %}Import #{{ pk }}{% endblocktrans %}</h1>
+
+<dl class="detail">
+    <dt>{% trans "File" %}</dt><dd>{{ job.original_filename }}</dd>
+    <dt>{% trans "Uploaded" %}</dt><dd>{{ job.created_at|date:"Y-m-d H:i:s" }} {% trans "by" %} {{ job.uploaded_by.username|default:"—" }}</dd>
+    <dt>{% trans "Status" %}</dt><dd><strong>{{ job.get_status_display }}</strong></dd>
+    <dt>{% trans "Summary" %}</dt><dd><pre>{{ job.summary|pprint }}</pre></dd>
+</dl>
+
+{% if job.status == 'preview' or job.status == 'failed' %}
+    <form method="post" action="{% url 'imports:apply' job.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn">{% trans "Apply this import" %}</button>
+    </form>
+{% endif %}
+
+<h2>{% trans "Rows" %}</h2>
+<table class="table">
+    <thead><tr><th>#</th><th>{% trans "Email" %}</th><th>{% trans "Name" %}</th><th>{% trans "X-Number" %}</th><th>{% trans "Action" %}</th><th>{% trans "Applied?" %}</th><th>{% trans "Message" %}</th></tr></thead>
+    <tbody>
+        {% for r in rows %}
+            <tr>
+                <td>{{ r.row_number }}</td>
+                <td>{{ r.email }}</td>
+                <td>{{ r.name }}</td>
+                <td>{{ r.x_number }}</td>
+                <td><code>{{ r.get_action_display }}</code></td>
+                <td>{% if r.applied %}{% trans "yes" %}{% else %}—{% endif %}</td>
+                <td>{{ r.message }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="7">{% trans "No rows." %}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Members" %}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{% trans "Members" %}</h1>
+    <a class="btn" href="{% url 'members:create' %}">{% trans "+ Add member" %}</a>
+</div>
+
+<form method="get" class="filters">
+    <input type="text" name="q" value="{{ filters.q }}" placeholder="{% trans 'Search name, email, username' %}">
+    <select name="group">
+        <option value="">{% trans "— all groups —" %}</option>
+        {% for g in groups %}
+            <option value="{{ g.pk }}" {% if filters.group == g.pk %}selected{% endif %}>{{ g.name }}</option>
+        {% endfor %}
+    </select>
+    <select name="state">
+        <option value="" {% if not filters.state %}selected{% endif %}>{% trans "any state" %}</option>
+        <option value="active" {% if filters.state == 'active' %}selected{% endif %}>{% trans "active" %}</option>
+        <option value="inactive" {% if filters.state == 'inactive' %}selected{% endif %}>{% trans "inactive" %}</option>
+    </select>
+    <button type="submit">{% trans "Filter" %}</button>
+</form>
+
+<table class="table">
+    <thead><tr><th>{% trans "Name" %}</th><th>{% trans "Email" %}</th><th>{% trans "X-Number" %}</th><th>{% trans "Status" %}</th><th></th></tr></thead>
+    <tbody>
+        {% for m in members %}
+            <tr>
+                <td>{{ m.name|default:m.username }}</td>
+                <td>{{ m.email }}</td>
+                <td>{{ m.attributes.x_number|default:"—" }}</td>
+                <td>{% if m.is_active %}{% trans "active" %}{% else %}<em>{% trans "inactive" %}</em>{% endif %}</td>
+                <td><a href="{% url 'members:detail' m.pk %}">{% trans "edit" %}</a></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5">{% trans "No members." %}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p class="pager">
+    {% if pagination.previous %}<a href="?page={{ pagination.previous }}&q={{ filters.q }}&group={{ filters.group }}&state={{ filters.state }}">{% trans "« previous" %}</a>{% endif %}
+    {% blocktrans with current=pagination.current|default:1 total=pagination.total_pages|default:1 %}page {{ current }} of {{ total }}{% endblocktrans %}
+    {% if pagination.next %}<a href="?page={{ pagination.next }}&q={{ filters.q }}&group={{ filters.group }}&state={{ filters.state }}">{% trans "next »" %}</a>{% endif %}
+</p>
+{% endblock %}

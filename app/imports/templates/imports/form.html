@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Upload CSV" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Upload CSV" %}</h1>
+<p>{% trans "Expected headers: email, name, optional x_number. The job is parsed and dry-run on upload; you'll confirm before any changes hit Authentik." %}</p>
+<form method="post" enctype="multipart/form-data" class="form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn">{% trans "Upload & preview" %}</button>
+    <a href="{% url 'imports:list' %}">{% trans "cancel" %}</a>
+</form>
+{% endblock %}

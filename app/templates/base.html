@@ -1,0 +1,329 @@
+{% load i18n steward %}<!doctype html>
+<html lang="{{ LANGUAGE_CODE|default:'en' }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Steward{% endblock %}</title>
+    <style>
+        /* ── palette ──────────────────────────────────────────────────
+         * The vibe: newsprint + a labor-poster red. No gradients, no
+         * rounded corners, no shadows -- type and rules carry the page.
+         * Black ink on cream paper; one red. */
+        :root {
+            --bg:           #f5efe3;
+            --paper:        #fbf6ec;
+            --text:         #1a1a1a;
+            --text-dim:     #4a4a4a;
+            --text-mute:    #6c6660;
+            --rule:         #1a1a1a;
+            --rule-light:   #d9d0bf;
+            --accent:       #b91c2c;
+            --accent-ink:   #7e131e;
+            --ok-bg:        #d6e7d3;
+            --ok-ink:       #1f4d24;
+            --warn-bg:      #f1e1b5;
+            --warn-ink:     #6a4b14;
+            --error-bg:     #f1c8c3;
+            --error-ink:    #6b1410;
+            --info-bg:      #e1dfd2;
+            --info-ink:     #2a2a2a;
+            --mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, monospace;
+            --sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, "Inter", system-ui, sans-serif;
+            --display: "Helvetica Neue", "Inter", system-ui, sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { background: var(--bg); }
+        body {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 1.25rem 1.5rem 4rem;
+            font-family: var(--sans);
+            font-size: 15px;
+            line-height: 1.45;
+            color: var(--text);
+        }
+
+        a { color: var(--text); text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+        a:hover { color: var(--accent); }
+
+        /* ── masthead ─────────────────────────────────────────────── */
+        header.mast {
+            border-top: 6px solid var(--accent);
+            border-bottom: 2px solid var(--rule);
+            background: var(--paper);
+            margin-bottom: 1.5rem;
+            padding: 1.1rem 1.25rem .75rem;
+            display: flex;
+            gap: 1.25rem;
+            align-items: baseline;
+            flex-wrap: wrap;
+        }
+        header.mast h1 {
+            margin: 0;
+            font-family: var(--display);
+            font-weight: 900;
+            font-size: 1.4rem;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+        header.mast h1 a { text-decoration: none; color: var(--text); }
+        header.mast h1 a::before {
+            content: "★";
+            color: var(--accent);
+            margin-right: .35rem;
+            font-size: 1em;
+        }
+        header.mast .tagline {
+            font-style: italic;
+            font-size: .8rem;
+            color: var(--text-mute);
+            letter-spacing: .02em;
+        }
+        header.mast nav { margin-left: 1rem; }
+        header.mast nav a {
+            margin-right: 1.1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            font-size: .8rem;
+            text-decoration: none;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 2px;
+        }
+        header.mast nav a:hover {
+            border-bottom-color: var(--accent);
+            color: var(--text);
+        }
+        header.mast .who {
+            margin-left: auto;
+            font-size: .85rem;
+            color: var(--text-dim);
+            display: flex;
+            gap: .6rem;
+            align-items: baseline;
+        }
+        header.mast .who form { display: inline; }
+        header.mast .who button {
+            background: none;
+            border: 0;
+            color: var(--accent);
+            cursor: pointer;
+            padding: 0;
+            font: inherit;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            font-size: .8rem;
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-decoration-color: var(--accent);
+            text-underline-offset: 3px;
+        }
+        header.mast .who button:hover { color: var(--accent-ink); }
+
+        /* ── headings ─────────────────────────────────────────────── */
+        h1, h2, h3 {
+            font-family: var(--display);
+            font-weight: 800;
+            letter-spacing: -.005em;
+            margin: 1.4rem 0 .6rem;
+        }
+        h1 { font-size: 1.65rem; }
+        h1::after {
+            content: "";
+            display: block;
+            width: 3rem;
+            border-bottom: 3px solid var(--accent);
+            margin-top: .35rem;
+        }
+        h2 { font-size: 1.15rem; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--rule); padding-bottom: .25rem; }
+        h3 { font-size: 1rem; }
+
+        .page-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+
+        /* ── tables ───────────────────────────────────────────────── */
+        table.table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background: var(--paper);
+            border-top: 2px solid var(--rule);
+            border-bottom: 2px solid var(--rule);
+        }
+        table.table th, table.table td {
+            border-bottom: 1px solid var(--rule-light);
+            padding: .55rem .7rem;
+            text-align: left;
+            vertical-align: top;
+        }
+        table.table tbody tr:last-child td { border-bottom: 0; }
+        table.table th {
+            background: transparent;
+            font-family: var(--display);
+            font-size: .72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--text);
+            border-bottom: 2px solid var(--rule);
+        }
+        table.table tbody tr:hover { background: rgba(185, 28, 44, .04); }
+        table.table em { color: var(--text-mute); font-style: italic; }
+
+        /* ── buttons & forms ──────────────────────────────────────── */
+        .btn, button, input[type="submit"] {
+            background: var(--text);
+            color: var(--paper);
+            padding: .45rem .9rem;
+            border: 2px solid var(--text);
+            border-radius: 0;
+            text-decoration: none;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            font-size: .78rem;
+            transition: background .12s ease, color .12s ease, border-color .12s ease;
+        }
+        .btn:hover, button:hover, input[type="submit"]:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--paper);
+        }
+        button.secondary, .btn.secondary {
+            background: transparent;
+            color: var(--text);
+        }
+        button.secondary:hover, .btn.secondary:hover {
+            background: transparent;
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        input[type="text"], input[type="email"], input[type="password"], input[type="file"], select, textarea {
+            font: inherit;
+            font-size: .92rem;
+            padding: .42rem .55rem;
+            border: 1px solid var(--rule);
+            background: var(--paper);
+            color: var(--text);
+            border-radius: 0;
+        }
+        input[type="text"]:focus, input[type="email"]:focus, select:focus, textarea:focus {
+            outline: 0;
+            border-color: var(--accent);
+            box-shadow: inset 0 -2px 0 var(--accent);
+        }
+
+        form.form p { margin: .5rem 0; display: flex; flex-direction: column; gap: .25rem; }
+        form.form label { font-weight: 700; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); }
+        form.form .helptext { color: var(--text-mute); font-size: .8rem; font-style: italic; }
+
+        form.filters, form.form-inline {
+            display: flex;
+            gap: .6rem;
+            align-items: end;
+            margin: .5rem 0 1.25rem;
+            flex-wrap: wrap;
+            padding: .75rem;
+            background: var(--paper);
+            border: 1px solid var(--rule-light);
+        }
+        form.filters label {
+            display: flex;
+            flex-direction: column;
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--text-dim);
+            gap: .15rem;
+        }
+
+        /* ── definition lists ─────────────────────────────────────── */
+        dl.detail {
+            display: grid;
+            grid-template-columns: 11rem 1fr;
+            gap: .35rem .85rem;
+            margin: 1rem 0 1.5rem;
+            padding: .75rem 1rem;
+            background: var(--paper);
+            border-left: 4px solid var(--accent);
+        }
+        dl.detail dt {
+            color: var(--text-dim);
+            font-size: .75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            padding-top: .1rem;
+        }
+        dl.detail dd { margin: 0; }
+
+        /* ── misc ─────────────────────────────────────────────────── */
+        pre {
+            background: var(--paper);
+            padding: .55rem .75rem;
+            overflow-x: auto;
+            border-left: 3px solid var(--rule);
+            font-family: var(--mono);
+            font-size: .85em;
+        }
+        code { font-family: var(--mono); font-size: .9em; }
+
+        .messages { list-style: none; padding: 0; margin: 0 0 1rem; }
+        .messages li {
+            padding: .55rem .85rem;
+            margin-bottom: .35rem;
+            border-left: 4px solid var(--rule);
+            background: var(--paper);
+            font-size: .92rem;
+        }
+        .messages li.success { background: var(--ok-bg);    color: var(--ok-ink);    border-left-color: var(--ok-ink); }
+        .messages li.error   { background: var(--error-bg); color: var(--error-ink); border-left-color: var(--accent); }
+        .messages li.warning { background: var(--warn-bg);  color: var(--warn-ink);  border-left-color: var(--warn-ink); }
+        .messages li.info    { background: var(--info-bg);  color: var(--info-ink);  border-left-color: var(--rule); }
+
+        .pager {
+            color: var(--text-dim);
+            font-size: .8rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin: 1rem 0;
+        }
+        .pager a { margin-right: .8rem; }
+
+        details summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+    </style>
+</head>
+<body>
+<header class="mast">
+    <h1><a href="/">Steward</a></h1>
+    <span class="tagline">{% trans "User management for the rank-and-file's rank-and-file." %}</span>
+    <nav>
+        <a href="{% url 'members:list' %}">{% trans "Members" %}</a>
+        <a href="{% url 'imports:list' %}">{% trans "Imports" %}</a>
+        <a href="{% url 'audit:list' %}">{% trans "Audit log" %}</a>
+        <a href="{% url 'settings' %}">{% trans "Settings" %}</a>
+    </nav>
+    <div class="who">
+        {% if user.is_authenticated %}
+            <span>{{ user|display_name }}</span>
+            <form method="post" action="{% url 'oidc_logout' %}">{% csrf_token %}<button type="submit">{% trans "log out" %}</button></form>
+        {% endif %}
+    </div>
+</header>
+
+{% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+{% block content %}{% endblock %}
+</body>
+</html>

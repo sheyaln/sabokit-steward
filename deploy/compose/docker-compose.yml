@@ -1,0 +1,152 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-steward}
+      POSTGRES_USER: ${POSTGRES_USER:-steward}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-steward}
+    volumes:
+      - steward-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-steward}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: ../..
+      dockerfile: deploy/compose/Dockerfile
+    # Dev overrides the production runtime: root user (so bind mounts don't
+    # collide with the image's `steward` uid), runserver (auto-reload), and
+    # collectstatic skipped (the prod image already baked it in; dev does
+    # not need a static rebuild on every `up`).
+    user: "0"
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    env_file:
+      - ../../.env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-steward}:${POSTGRES_PASSWORD:-steward}@db:5432/${POSTGRES_DB:-steward}
+      STEWARD_COLLECTSTATIC: "0"
+    volumes:
+      - ../../app:/srv/app
+      - steward-media:/srv/media
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  qcluster:
+    build:
+      context: ../..
+      dockerfile: deploy/compose/Dockerfile
+    user: "0"
+    command: ["python", "manage.py", "qcluster"]
+    env_file:
+      - ../../.env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-steward}:${POSTGRES_PASSWORD:-steward}@db:5432/${POSTGRES_DB:-steward}
+      STEWARD_RUN_MIGRATIONS: "0"
+      STEWARD_COLLECTSTATIC: "0"
+    volumes:
+      - ../../app:/srv/app
+      - steward-media:/srv/media
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Local Authentik for dev/testing. Enabled via `--profile authentik`.
+  # Not for production; not shipped with the federated-commons integration.
+  # ---------------------------------------------------------------------------
+
+  authentik-postgres:
+    image: postgres:16-alpine
+    profiles: [authentik]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: authentik
+      POSTGRES_USER: authentik
+      POSTGRES_PASSWORD: ${AUTHENTIK_PG_PASS:-authentik-dev}
+    volumes:
+      - authentik-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d authentik -U authentik"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  authentik-redis:
+    image: redis:alpine
+    profiles: [authentik]
+    restart: unless-stopped
+    volumes:
+      - authentik-redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  authentik-server:
+    image: ghcr.io/goauthentik/server:${AUTHENTIK_TAG:-2024.12.3}
+    profiles: [authentik]
+    restart: unless-stopped
+    command: server
+    environment:
+      AUTHENTIK_REDIS__HOST: authentik-redis
+      AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_PG_PASS:-authentik-dev}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:-dev-only-replace-me-please-1234567890abcdef}
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD:-akadmin}
+      AUTHENTIK_BOOTSTRAP_EMAIL: ${AUTHENTIK_BOOTSTRAP_EMAIL:-akadmin@example.com}
+      AUTHENTIK_BOOTSTRAP_TOKEN: ${AUTHENTIK_BOOTSTRAP_TOKEN:-}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+    volumes:
+      - authentik-media:/media
+      - authentik-templates:/templates
+      - ./authentik-blueprints:/blueprints/local:ro
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9443:9443"
+    depends_on:
+      authentik-postgres:
+        condition: service_healthy
+      authentik-redis:
+        condition: service_healthy
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:${AUTHENTIK_TAG:-2024.12.3}
+    profiles: [authentik]
+    restart: unless-stopped
+    command: worker
+    user: root
+    environment:
+      AUTHENTIK_REDIS__HOST: authentik-redis
+      AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_PG_PASS:-authentik-dev}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:-dev-only-replace-me-please-1234567890abcdef}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+    volumes:
+      - authentik-media:/media
+      - authentik-templates:/templates
+      - ./authentik-blueprints:/blueprints/local:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      authentik-postgres:
+        condition: service_healthy
+      authentik-redis:
+        condition: service_healthy
+
+volumes:
+  steward-pgdata:
+  steward-media:
+  authentik-pgdata:
+  authentik-redisdata:
+  authentik-media:
+  authentik-templates:

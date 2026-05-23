@@ -1,0 +1,45 @@
+[project]
+name = "steward"
+version = "0.0.0"
+description = "Simplified Authentik admin UI for non-technical organization administrators."
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "Django>=5.1,<5.3",
+    "psycopg[binary]>=3.2,<4",
+    "mozilla-django-oidc>=4.0,<5",
+    "django-environ>=0.11,<1",
+    "django-q2>=1.7,<2",
+    "requests>=2.32,<3",
+    "gunicorn>=22,<24",
+    "whitenoise>=6.7,<7",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.7",
+    "pytest>=8",
+    "pytest-django>=4.9",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# Steward is an application, not a distributable package.
+py-modules = []
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+# Django-generated migrations are not human-authored; lint findings on them
+# are noise that Renovate / makemigrations would just regenerate.
+extend-exclude = ["**/migrations/**"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "DJ"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py", "*_test.py", "tests.py"]
+pythonpath = ["app"]

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% blocktrans %}{{ action }} member{% endblocktrans %}{% endblock %}
+{% block content %}
+<h1>{% blocktrans %}{{ action }} member{% endblocktrans %}</h1>
+<form method="post" class="form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn">{{ action }}</button>
+    <a href="{% url 'members:list' %}">{% trans "cancel" %}</a>
+</form>
+{% endblock %}

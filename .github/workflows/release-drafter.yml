@@ -1,0 +1,26 @@
+name: Release Drafter
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    # PR events drive autolabeler; the draft itself only updates on push.
+    types: [opened, reopened, synchronize, labeled, unlabeled, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  update_release_draft:
+    permissions:
+      contents: write       # to update the draft release
+      pull-requests: write  # to add autolabeler labels to PRs
+    runs-on: ubuntu-latest
+    steps:
+      # Pinned to a tag for now. Renovate (Phase D) will rewrite this to a
+      # SHA on the next dependency sweep.
+      - uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release-drafter.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

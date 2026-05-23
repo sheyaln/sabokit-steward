@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{{ member.name|default:member.username }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{{ member.name|default:member.username }}</h1>
+    <a class="btn" href="{% url 'members:edit' member.pk %}">{% trans "Edit" %}</a>
+</div>
+
+<dl class="detail">
+    <dt>{% trans "Email / username" %}</dt><dd>{{ member.email }}</dd>
+    <dt>{% trans "X-Number" %}</dt><dd>{{ x_number|default:"—" }}</dd>
+    <dt>{% trans "Status" %}</dt><dd>{% if member.is_active %}{% trans "active" %}{% else %}<em>{% trans "inactive" %}</em>{% endif %}</dd>
+    <dt>{% trans "Authentik pk" %}</dt><dd><code>{{ member.pk }}</code></dd>
+</dl>
+
+<form method="post" action="{% if member.is_active %}{% url 'members:deactivate' member.pk %}{% else %}{% url 'members:activate' member.pk %}{% endif %}">
+    {% csrf_token %}
+    <button type="submit">{% if member.is_active %}{% trans "Deactivate" %}{% else %}{% trans "Activate" %}{% endif %}</button>
+</form>
+
+<h2>{% trans "Account actions" %}</h2>
+<form method="post" action="{% url 'members:password_reset' member.pk %}"
+      onsubmit="return confirm('{% trans "Send a password reset email to this member?" %}');">
+    {% csrf_token %}
+    <button type="submit">{% trans "Send password reset email" %}</button>
+</form>
+
+<h2>{% trans "MFA devices" %}</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>{% trans "Name" %}</th>
+            <th>{% trans "Type" %}</th>
+            <th>{% trans "Confirmed" %}</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for d in mfa_devices %}
+            <tr>
+                <td>{{ d.name|default:"—" }}</td>
+                <td><code>{{ d.type }}</code></td>
+                <td>{% if d.confirmed %}{% trans "yes" %}{% else %}{% trans "no" %}{% endif %}</td>
+                <td>
+                    <form method="post" action="{% url 'members:remove_mfa' member.pk %}"
+                          onsubmit="return confirm('{% trans "Remove this MFA device? The member will lose this factor immediately." %}');">
+                        {% csrf_token %}
+                        <input type="hidden" name="device_type" value="{{ d.type }}">
+                        <input type="hidden" name="device_pk" value="{{ d.pk }}">
+                        <input type="hidden" name="device_name" value="{{ d.name }}">
+                        <button type="submit">{% trans "remove" %}</button>
+                    </form>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="4">{% trans "No MFA devices enrolled." %}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>{% trans "Groups" %}</h2>
+<table class="table">
+    <thead><tr><th>{% trans "Group" %}</th><th></th></tr></thead>
+    <tbody>
+        {% for g in in_groups %}
+            <tr>
+                <td>{{ g.name }}</td>
+                <td>
+                    <form method="post" action="{% url 'members:remove_group' member.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="group_uuid" value="{{ g.pk }}">
+                        <button type="submit">{% trans "remove" %}</button>
+                    </form>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="2">{% trans "No group memberships." %}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if available_groups %}
+<form method="post" action="{% url 'members:add_group' member.pk %}" class="form-inline">
+    {% csrf_token %}
+    <label>{% trans "Add to group" %}
+        <select name="group_uuid">
+            {% for g in available_groups %}
+                <option value="{{ g.pk }}">{{ g.name }}</option>
+            {% endfor %}
+        </select>
+    </label>
+    <button type="submit">{% trans "Add" %}</button>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Settings" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Settings" %}</h1>
+<p>{% blocktrans %}These settings control how Steward talks to Authentik. They can also be pinned at deploy time via environment variables; pinned fields are read-only here.{% endblocktrans %}</p>
+
+<form method="post" class="form" style="max-width: 38rem;">
+    {% csrf_token %}
+
+    <p>
+        <label for="{{ form.admin_group_name.id_for_label }}">
+            {% trans "Admin group name" %}
+            {% if locked.admin_group_name %}
+                <span style="color: var(--accent); font-weight: 700; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em;">— {% trans "locked by env" %}</span>
+            {% endif %}
+        </label>
+        {{ form.admin_group_name }}
+        <span class="helptext">{{ form.admin_group_name.help_text }}</span>
+        {% if locked.admin_group_name %}
+            <span class="helptext">{% blocktrans with v=effective_admin_group %}AUTHENTIK_ADMIN_GROUP is set in the environment to "{{ v }}". To edit here, unset that env var and redeploy.{% endblocktrans %}</span>
+        {% endif %}
+    </p>
+
+    <p>
+        <label for="{{ form.invite_flow_slug.id_for_label }}">
+            {% trans "Invitation flow slug" %}
+            {% if locked.invite_flow_slug %}
+                <span style="color: var(--accent); font-weight: 700; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em;">— {% trans "locked by env" %}</span>
+            {% endif %}
+        </label>
+        {{ form.invite_flow_slug }}
+        <span class="helptext">{{ form.invite_flow_slug.help_text }}</span>
+        {% if locked.invite_flow_slug %}
+            <span class="helptext">{% blocktrans with v=effective_invite_flow %}AUTHENTIK_INVITE_FLOW is set in the environment to "{{ v }}". To edit here, unset that env var and redeploy.{% endblocktrans %}</span>
+        {% endif %}
+    </p>
+
+    <p>
+        <label for="{{ form.group_filter_regex.id_for_label }}">
+            {% trans "Group filter regex" %}
+            {% if locked.group_filter_regex %}
+                <span style="color: var(--accent); font-weight: 700; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em;">— {% trans "locked by env" %}</span>
+            {% endif %}
+        </label>
+        {{ form.group_filter_regex }}
+        <span class="helptext">{{ form.group_filter_regex.help_text }}</span>
+        {% if form.group_filter_regex.errors %}
+            <span class="helptext" style="color: var(--accent-ink);">{{ form.group_filter_regex.errors|join:" " }}</span>
+        {% endif %}
+        {% if locked.group_filter_regex %}
+            <span class="helptext">{% blocktrans with v=effective_group_filter %}AUTHENTIK_GROUP_FILTER is set in the environment to "{{ v }}". To edit here, unset that env var and redeploy.{% endblocktrans %}</span>
+        {% endif %}
+    </p>
+
+    {% if form.non_field_errors %}
+        <ul class="messages">
+            {% for error in form.non_field_errors %}
+                <li class="error">{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <button type="submit" class="btn">{% trans "Save" %}</button>
+</form>
+
+<h2 style="margin-top: 2rem;">{% trans "Effective values" %}</h2>
+<dl class="detail">
+    <dt>{% trans "Admin group" %}</dt><dd><code>{{ effective_admin_group }}</code>{% if locked.admin_group_name %} <em>({% trans "from environment" %})</em>{% endif %}</dd>
+    <dt>{% trans "Invite flow" %}</dt><dd><code>{{ effective_invite_flow|default:"—" }}</code>{% if locked.invite_flow_slug %} <em>({% trans "from environment" %})</em>{% endif %}</dd>
+    <dt>{% trans "Group filter" %}</dt><dd><code>{{ effective_group_filter|default:"—" }}</code>{% if locked.group_filter_regex %} <em>({% trans "from environment" %})</em>{% endif %}</dd>
+</dl>
+{% endblock %}

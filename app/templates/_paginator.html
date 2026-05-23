@@ -1,0 +1,11 @@
+{% load i18n %}{% if page.paginator.num_pages > 1 %}
+<p class="pager">
+    {% if page.has_previous %}
+        <a href="?page={{ page.previous_page_number }}">{% trans "« previous" %}</a>
+    {% endif %}
+    {% blocktrans with current=page.number total=page.paginator.num_pages %}page {{ current }} of {{ total }}{% endblocktrans %}
+    {% if page.has_next %}
+        <a href="?page={{ page.next_page_number }}">{% trans "next »" %}</a>
+    {% endif %}
+</p>
+{% endif %}

@@ -1,0 +1,11 @@
+# Trivy ignore file.
+#
+# One CVE per line. Always pair an entry with a comment explaining WHY this
+# CVE doesn't apply to Steward's runtime -- "wait for upstream patch" with no
+# detail is what lets stale ignores rot in place.
+#
+# Format:
+#   CVE-XXXX-YYYYY  # reason / re-evaluate after <date>
+#
+# (Empty on purpose; add entries here only when a Trivy failure is shown to
+#  be a false-positive or non-exploitable in Steward's actual configuration.)
