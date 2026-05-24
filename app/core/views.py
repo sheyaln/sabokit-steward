@@ -57,26 +57,50 @@ def app_settings(request: HttpRequest) -> HttpResponse:
         "invite_flow_slug": invite_flow_locked(),
         "group_filter_regex": group_filter_locked(),
     }
+    # What the resolvers actually return -- the env override when present,
+    # the DB value otherwise. Locked fields render *this* value so admins
+    # see what's actually in effect, not the stale DB default.
+    effective = {
+        "admin_group_name": admin_group_name(),
+        "invite_flow_slug": invite_flow_slug(),
+        "group_filter_regex": group_filter_regex(),
+    }
+    # Snapshot the *DB* values up front, before any form-driven mutation.
+    # Used for the audit log AND to restore locked fields post-validation
+    # (since marking a field disabled uses initial == env value, which
+    # would otherwise leak into the DB on save).
+    db_values = {field: getattr(instance, field) for field in EDITABLE_SETTINGS}
     if request.method == "POST":
         form = AppSettingForm(request.POST, instance=instance)
+        # Mark env-locked fields disabled BEFORE validation. Django's
+        # `disabled` flag makes bound forms ignore the POSTed value and
+        # use the field's initial instead, so an attacker can't bypass
+        # the env lock by POSTing directly.
+        ignored = []
+        for field, is_locked in locked.items():
+            if is_locked:
+                form.fields[field].disabled = True
+                form.initial[field] = effective[field]
+                ignored.append(field)
         if form.is_valid():
-            before = {field: getattr(instance, field) for field in EDITABLE_SETTINGS}
-            # Don't persist fields that are locked by env -- the env value
-            # is shadowing the DB value anyway, so writing the form's input
-            # would be misleading silent state. Surface a notice instead.
-            ignored = []
+            # `_post_clean` (run by is_valid) wrote cleaned_data into
+            # form.instance. For locked fields, that's the env value
+            # (which is what initial was overridden to). Restore the DB
+            # value before save so the env override never leaks into
+            # the persisted row -- otherwise unsetting the env var later
+            # would surface the stale env value as if it were a real
+            # user choice.
             for field in EDITABLE_SETTINGS:
                 if locked[field]:
-                    setattr(form.instance, field, getattr(instance, field))
-                    ignored.append(field)
+                    setattr(form.instance, field, db_values[field])
             form.save()
             after = {field: getattr(form.instance, field) for field in EDITABLE_SETTINGS}
-            if before != after:
+            if db_values != after:
                 record(
                     actor=request.user,
                     action=AuditLog.Action.SETTINGS_UPDATE,
                     target="app-settings",
-                    before=before,
+                    before=db_values,
                     after=after,
                 )
             if ignored:
@@ -90,17 +114,19 @@ def app_settings(request: HttpRequest) -> HttpResponse:
             return redirect(reverse("settings"))
     else:
         form = AppSettingForm(instance=instance)
-    for field, is_locked in locked.items():
-        if is_locked:
-            form.fields[field].disabled = True
+        for field, is_locked in locked.items():
+            if is_locked:
+                form.fields[field].disabled = True
+                # Show the env value in the input, not the stale DB default.
+                form.initial[field] = effective[field]
     return render(
         request,
         "core/settings.html",
         {
             "form": form,
             "locked": locked,
-            "effective_admin_group": admin_group_name(),
-            "effective_invite_flow": invite_flow_slug(),
-            "effective_group_filter": group_filter_regex(),
+            "effective_admin_group": effective["admin_group_name"],
+            "effective_invite_flow": effective["invite_flow_slug"],
+            "effective_group_filter": effective["group_filter_regex"],
         },
     )

@@ -35,7 +35,7 @@ def member_list(request: HttpRequest) -> HttpResponse:
     ak = _client()
     try:
         data = ak.list_users(search=search, group=group, is_active=is_active, page=page)
-        groups = filter_groups(ak.list_groups().get("results", []))
+        groups = filter_groups(ak.list_all_groups())
     except AuthentikError as e:
         messages.error(request, _("Authentik API error: %(err)s") % {"err": e})
         data = {"results": [], "pagination": {}}
@@ -68,7 +68,15 @@ def member_create(request: HttpRequest) -> HttpResponse:
         else:
             msg = _("Created %(email)s.") % {"email": user["email"]}
             if invitation:
-                msg += " " + _("Invitation pk=%(pk)s.") % {"pk": invitation.get("pk")}
+                url = invitation.get("enrollment_url") or ""
+                if url:
+                    msg += " " + _("Invitation URL: %(url)s") % {"url": url}
+                else:
+                    # Fallback when we couldn't derive a browser-facing
+                    # Authentik base (e.g. OIDC_OP_AUTHORIZATION_ENDPOINT
+                    # unset) -- still useful for the admin to know an
+                    # invitation exists in Authentik.
+                    msg += " " + _("Invitation pk=%(pk)s.") % {"pk": invitation.get("pk")}
             messages.success(request, msg)
             return redirect(reverse("members:detail", args=[user["pk"]]))
     return render(request, "members/form.html", {"form": form, "action": _("Create")})
@@ -79,7 +87,7 @@ def member_detail(request: HttpRequest, pk: int) -> HttpResponse:
     ak = _client()
     try:
         user = ak.get_user(pk)
-        all_groups = ak.list_groups().get("results", [])
+        all_groups = ak.list_all_groups()
     except AuthentikError as e:
         messages.error(request, _("Authentik error: %(err)s") % {"err": e})
         return redirect("members:list")
@@ -175,11 +183,7 @@ def member_add_group(request: HttpRequest, pk: int) -> HttpResponse:
             ak = _client()
             user = ak.get_user(pk)
             group = next(
-                (
-                    g
-                    for g in ak.list_groups().get("results", [])
-                    if g["pk"] == form.cleaned_data["group_uuid"]
-                ),
+                (g for g in ak.list_all_groups() if g["pk"] == form.cleaned_data["group_uuid"]),
                 None,
             )
             if group is None:
@@ -244,11 +248,7 @@ def member_remove_group(request: HttpRequest, pk: int) -> HttpResponse:
             ak = _client()
             user = ak.get_user(pk)
             group = next(
-                (
-                    g
-                    for g in ak.list_groups().get("results", [])
-                    if g["pk"] == form.cleaned_data["group_uuid"]
-                ),
+                (g for g in ak.list_all_groups() if g["pk"] == form.cleaned_data["group_uuid"]),
                 None,
             )
             if group is None:

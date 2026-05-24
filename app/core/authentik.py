@@ -150,6 +150,25 @@ class AuthentikClient:
             "GET", "api/v3/core/groups/", params={"page": page, "page_size": page_size}
         )
 
+    # Hard cap to avoid pathological cases (misconfigured Authentik returning
+    # tens of thousands of groups). The UI is unusable past a few hundred
+    # entries anyway -- callers should narrow with `group_filter_regex`.
+    LIST_ALL_GROUPS_MAX_PAGES = 50
+
+    def list_all_groups(self, *, page_size: int = 100) -> list[dict[str, Any]]:
+        """Aggregate all pages of `list_groups`. The single-page method
+        misses anything past the first 100, which silently breaks
+        `group_filter_regex` whenever an Authentik instance has more
+        groups than fit on one page."""
+        out: list[dict[str, Any]] = []
+        for page in range(1, self.LIST_ALL_GROUPS_MAX_PAGES + 1):
+            data = self.list_groups(page=page, page_size=page_size)
+            out.extend(data.get("results") or [])
+            pagination = data.get("pagination") or {}
+            if not pagination.get("next"):
+                break
+        return out
+
     def find_group_by_name(self, name: str) -> dict[str, Any] | None:
         data = self._request("GET", "api/v3/core/groups/", params={"name": name})
         results = data.get("results") or []

@@ -8,11 +8,13 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 from audit.models import AuditLog
 from audit.services import record
 from core.authentik import AuthentikClient, AuthentikError
 from core.services import invite_flow_slug
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -172,8 +174,10 @@ def remove_from_group(
 def _maybe_invite(*, actor, user: dict[str, Any]) -> dict[str, Any] | None:
     """Create an Authentik invitation linked to the configured enrollment flow.
 
-    The admin sees the resulting flow URL in the UI; Authentik handles email
-    delivery itself if SMTP is configured there.
+    The returned dict carries the invitation primary key plus a precomputed
+    `enrollment_url` the admin can share. Authentik itself only emails the
+    invitee when the configured flow has an email stage -- this URL gives
+    admins a fallback they can paste into any other channel.
     """
     flow_slug = invite_flow_slug()
     if not flow_slug:
@@ -194,14 +198,37 @@ def _maybe_invite(*, actor, user: dict[str, Any]) -> dict[str, Any] | None:
             },
             single_use=True,
         )
+        invitation["enrollment_url"] = _enrollment_url(flow_slug, invitation.get("pk"))
         record(
             actor=actor,
             action=AuditLog.Action.MEMBER_CREATE,
             target=user["email"],
-            after={"invitation_pk": invitation.get("pk")},
+            after={
+                "invitation_pk": invitation.get("pk"),
+                "enrollment_url": invitation["enrollment_url"],
+            },
             note="invitation created",
         )
         return invitation
     except AuthentikError:
         logger.exception("Failed to create Authentik invitation for %s", user.get("email"))
         return None
+
+
+def _enrollment_url(flow_slug: str, invitation_pk: Any) -> str:
+    """Construct the user-facing URL that consumes the invitation token.
+
+    Derived from OIDC_OP_AUTHORIZATION_ENDPOINT (which is browser-facing,
+    unlike AUTHENTIK_API_URL which is typically an in-cluster hostname).
+    Returns "" when we can't derive a base.
+    """
+    if not invitation_pk:
+        return ""
+    auth_ep = getattr(settings, "OIDC_OP_AUTHORIZATION_ENDPOINT", "") or ""
+    if not auth_ep:
+        return ""
+    parts = urlsplit(auth_ep)
+    if not parts.scheme or not parts.netloc:
+        return ""
+    base = urlunsplit((parts.scheme, parts.netloc, "", "", ""))
+    return f"{base}/if/flow/{flow_slug}/?itoken={invitation_pk}"
