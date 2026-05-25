@@ -88,9 +88,6 @@ In Authentik you need an OAuth2/OpenID provider + application
 whose token Steward uses for the admin API (the service account needs
 permission to manage users and groups).
 
-Released images are signed (cosign keyless via Sigstore) and carry SLSA
-provenance + SBOM. `docs/ops-runbook.md` has the verification recipe.
-
 ## License
 
 MIT. See [LICENSE](./LICENSE).
