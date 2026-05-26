@@ -6,8 +6,8 @@ audit everything. It talks to Authentik over the REST API; Authentik stays
 the source of truth.
 
 Works against any Authentik instance. I built it for use with the
-[federated-commons](https://github.com/sheyaln/federated-commons) blueprint
-but there's nothing in it that requires federated-commons -- give it the
+[sabokit](https://github.com/sheyaln/sabokit) blueprint
+but there's nothing in it that requires sabokit -- give it the
 OIDC client credentials, a service-account API token, and a hostname, and
 it goes.
 
